@@ -1,0 +1,163 @@
+---
+title: "607 Week 3 Assignment"
+author: "Peter Kowalchuk"
+date: "9/8/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(stringr)
+```
+
+##3. Copy the introductory example. The vector name stores the extracted names. 
+
+###1. Use the tools of this chaptor to rearrange the vector so that all elements conform to the standard first_name  last_name
+
+To build our vector to conform to the standard, we first extract all the first names and place it onto a vector. We then do the same with the last names and place them into a separate vector. After we have these two vectors we do an element-wise concatenation of the two to get the desired vector complying with the standard (when concatenating we add a space between the first and last name of the characters)
+
+```{r}
+
+raw.data<-"555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert"
+
+name<-unlist(str_extract_all(raw.data,"[[:alpha:]., ]{2,}"))
+name
+firstName<-str_extract_all(unlist(str_extract_all(name,"[:alpha:]{1,25} |, [:print:]{1,25}")),"[A-Z](.+?)+[a-z]")
+firstName
+
+lastName<-str_extract_all(unlist(str_extract_all(name,"[a-z] [:alpha:]{1,25}[a-z]$|[:print:]{1,25},")),"[A-z][a-z]+|[A-z][a-z]+,")
+lastName
+
+paste0(firstName,' ',lastName)
+```
+
+###2. Construct a logical vector indicating wether a character has a title (i.e, Rev. and Dr.)
+
+We use the extract all function to find all characters with a title
+
+```{r}
+title<-str_extract_all(name,"[:alpha:]{3}[.]|[:alpha:]{2}[.]")
+title
+```
+
+Now that we know we have the characters with tittles, we can change the extract all function for detect to get a logical vector
+
+```{r}
+logicalTittle<-str_detect(name,"[:alpha:]{3}[.]|[:alpha:]{2}[.]")
+logicalTittle
+```
+
+###3. Construct a logical vector indicating wether a character has a second name.
+
+We use the extract all function to find all characters with a second name. We look for both an initial, with and without a period and full second names. All these three cases are not necesary for this dtaset, since just looking for an inital with a period would have found Mr. Burns, but it was added for a more general solution.
+
+```{r}
+secondName<-str_extract_all(name," [:alpha:]{1}[.]|:alpha:]{1}| [:alpha:] ")
+secondName
+```
+
+Now that we have found the second names, we can replace the ectract all function for detect to generate the logical vector
+
+```{r}
+logicalSecondName<-str_detect(name," [:alpha:]{1}[.]|:alpha:]{1}| [:alpha:] ")
+logicalSecondName
+```
+
+##4. Describe the types of strings that conform to the following regular expressions and censtruct an example that is matched by the regular expression.
+
+##1. [0-9]+\\$
+
+Returns expression with numbers between 0 and 9 up to the $ simbol
+[0-9]+ will find many subsequent numbers from 0 to 9
+\\$ will find the literal $ with the \\ making $ a literal and not the end of an expression
+
+Four matching and three no-matching expressions shown
+```{r}
+text<-c('1234$','123 1234$','67789$566789','2345345 2345345$','2345345','$123','234234sdfsdf$')
+str_extract_all(text,"[0-9]+\\$")
+str_detect(text,"[0-9]+\\$")
+```
+
+
+##2. \\b[a-z]{1,4}\\b
+
+We are searching for whole words, with characters from a to z. Expressions have to contain just one word, bo blank spaces, and need to have 1 to 4 characters
+
+Four matching and two no-matching expressions shown
+```{r}
+text<-c('good','test','good more than one word each is less than four dig','good@each@word&seen','wordtoolong','verybad morethan oneword eachis morethan fourdigits')
+str_extract_all(text,"\\b[a-z]{1,4}\\b")
+str_detect(text,"\\b[a-z]{1,4}\\b")
+```
+
+
+##3. .*?\\.txt$
+
+Looks for expression ending in .txt (probably looking for text files in a text).   
+txt$ identifies expressions ending in .txt    
+\\. is a literal that changes the meaning of . from a wildcard, to be a literal part of the .txt expression being looked for    
+.*? takes the wildcard . and returns many mtches for any character, not just one    
+
+Five matching and two no-matching expressions shown
+```{r}
+text<-c('testfile.txt','testfile.txt','.txt','\\testfile.txt','something and a file file.txt','sdfdsftxt','txt.sdfg')
+str_extract_all(text,".*?\\.txt$")
+str_detect(text,".*?\\.txt$")
+```
+
+##4. \\d{2}/\\d{2}/\\d{4}
+
+Looking for date matches, that is 2 digits then a / then 2 digits then another / then 4 digits. So looking for dates where days and months need to be expressed as two digits, and the year as 4 digits
+
+Two matching and two no-matching expressions shown
+```{r}
+text<-c('01/01/1971','12/12/2012','1/1/71','12/12/12')
+str_extract_all(text,"\\d{2}/\\d{2}/\\d{4}")
+str_detect(text,"\\d{2}/\\d{2}/\\d{4}")
+```
+
+
+##5. <(.+?)>.+?</\\1>
+
+Here they are using backreferenceing to find expressions inside the <> than then repreat after a </    
+This can be used to find tags in an HTML documents. That is we find a tag start with < someTag >, the () references the tag and the .+? looks for any tag, not one in particular. Then we go thru wahatever the body of the tag might be with .+? after which we are looking for a tag close by looking at </ with finally \\ \\ 1 making reference to the actual body that was opened, that is a reference back to what was inside the starting <>    
+
+Four matching tags and two no-matching tags shown
+```{r}
+text<-c('<tag>body</tag>','<anothertag>body</anothertag>','<tag>any body with anything in it</tag>','<tag>not the same tag being clossed</anothertag>','<tag>again not the same tag</endtag>','<tag>good did find the same tag</tagend>')
+str_extract_all(text,"<(.+?)>.+?</\\1")
+str_detect(text,"<(.+?)>.+?</\\1")
+```
+
+##9. The following code hides a secret message. Crack it with R and regular expressions.
+
+```{r}
+code<-'clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hprfpRxs5Aj5dwpn0TanwoUwisdij7Lj8kpf03At5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigOd6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPalotfb7wEm24k6t3sR9zqe5fy89n6N5t9kc4fE905gmc4Rgxo5nhDk!gr'
+```
+
+Using the hint I first looked at all the alphabet characters, then low cap words, then words starting with caps. No luck on any of these.
+
+```{r}
+str_extract_all(code,"[a-z]")
+str_extract_all(code,"[a-z]+")
+str_extract_all(code,"[A-Za-z]+")
+```
+
+Finally looked at only the caps letters, and found the message in the code
+
+```{r}
+codeMessage<-str_extract_all(code,"[A-Z]+")
+codeMessage
+codeMessageString<-paste(unlist(codeMessage),collapse='')
+codeMessageString
+codeMessageString<-str_replace_all(codeMessageString,"SY","S Y")
+codeMessageString<-str_replace_all(codeMessageString,"UA","U A")
+codeMessageString<-str_replace_all(codeMessageString,"EA","E A")
+codeMessageString<-str_replace_all(codeMessageString,"AS","A S")
+codeMessageString<-str_replace_all(codeMessageString,"RN","R N")
+codeMessageString
+```
+
